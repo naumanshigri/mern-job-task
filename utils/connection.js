@@ -13,7 +13,6 @@ const dbConnection = async () => {
         }
       );
     } catch (e) {
-      console.log("error in connection", e);
       return reject(e);
     }
   });

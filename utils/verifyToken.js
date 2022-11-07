@@ -6,7 +6,6 @@ const { sendResponse, errReturned } = require("./dto");
 
 exports.authUser = async function (req, res, next) {
   const token = req.header("auth-token");
-  console.log("Token is ", token);
   try {
     if (!token)
       return sendResponse(res, UNAUTHORIZED, { token: "Invalid Token" });
@@ -33,7 +32,6 @@ exports.authUser = async function (req, res, next) {
 
     next();
   } catch (error) {
-    console.log("the token error :-", error);
     res.status(400).send({ token: "Invalid Token" });
   }
 };

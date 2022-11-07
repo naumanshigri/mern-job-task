@@ -8,26 +8,39 @@ const nodemailer = require("nodemailer");
 require("dotenv").config();
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
-  host: "smtp.ethereal.email",
-  port: 587,
-  secure: false,
+  host: "smtp.gmail.com",
+  port: 465,
   auth: {
     user: process.env.adminEmail,
     pass: process.env.adminpass,
   },
 });
 
+// const transporter = nodemailer.createTransport({
+//   host: "smtp.mailserver.com",
+//   port: 2525,
+//   auth: {
+//     user: process.env.adminEmail,
+//     pass: process.env.adminpass,
+//   },
+// });
+
+// const transporter = nodemailer.createTransport({
+//   host: "smtp.ethereal.email",
+//   port: 587,
+//   auth: {
+//     user: "jarvis.windler@ethereal.email",
+//     pass: "kBCmyCzuQpRXvue9Y4",
+//   },
+// });
+
 /**
  * 
  User Login
  */
 exports.userLogin = async (req, res) => {
-  console.log("in login endpoin");
-
   try {
     let { email, password } = req.body;
-    console.log("the request", req.body);
     // CHECKING IF THE USER IS EXIST
     const user = await User.findOne({ email });
 
@@ -35,11 +48,10 @@ exports.userLogin = async (req, res) => {
     // PASSWORD IS CORRECT
     const validPass = await bcrypt.compare(password, user.password);
     if (!validPass) return errReturned(res, "Invalid Password");
-    let token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
+    let token = jwt.sign({ _id: user }, process.env.TOKEN_SECRET);
 
     res.header("auth-token", token).json({ token, user });
   } catch (error) {
-    console.log("the login error", error);
     return errReturned(res, error);
   }
 };
@@ -51,15 +63,7 @@ exports.userLogin = async (req, res) => {
 exports.signUp = async (req, res) => {
   try {
     let { name, email, password } = req.body;
-    console.log("React called req Body", req.body);
     let required = ["name", "email", "password"];
-
-    // console.log("transporter", transporter);
-    console.log("adminEmail", process.env.adminEmail);
-    console.log("adminpass", process.env.adminpass);
-
-    // return;
-
     for (let key of required) {
       if (
         !req["body"][key] ||
@@ -72,7 +76,8 @@ exports.signUp = async (req, res) => {
 
     // Check the User is already Exists in the database
     const emailExist = await User.findOne({ email: email });
-    if (emailExist) return errReturned(res, "Email Already Exists");
+    if (emailExist)
+      return sendResponse(res, BADREQUEST, "Email Already Exists");
 
     //Hash Password
     const salt = await bcrypt.genSalt(10);
@@ -90,35 +95,61 @@ exports.signUp = async (req, res) => {
       subject: "Registeration email",
       text: "Registration Success",
     };
-    try {
-    } catch (error) {}
-    let info = await transporter.sendMail({
-      from: process.env.adminEmail, // sender address
-      to: user.email, // list of receivers
-      subject: "Hello ✔", // Subject line
-      text: "Hello world?", // plain text body
-      html: "<b>Hello world?</b>", // html body
-    });
 
-    // let lastEmail = await transporter.sendMail(option, async (error, info) => {
+    console.log("pro", process.env.adminEmail);
+    console.log("pro", process.env.adminpass);
+
+    // transporter.sendMail(option, async (error, info) => {
+    //   console.log("error", error);
     //   if (error) {
     //     return sendResponse(
     //       res,
-    //       SUCCESS,
+    //       BADREQUEST,
     //       "Register Faild",
     //       `Registration failed with email:- ${email}`
     //     );
     //   }
-    //   return info;
+
+    //   await user.save();
+
+    //   return sendResponse(
+    //     res,
+    //     SUCCESS,
+    //     "Register Notification",
+    //     `Email sent success fully to ${option.to}`
+    //   );
+    //   // return info;
     // });
-    console.log("lastEmail", info);
-    const saveUser = await user.save();
+
+    await user.save();
+
     return sendResponse(
       res,
       SUCCESS,
       "Register Notification",
-      `Email sent success fully to ${option.to}`
+      `Registration Success with this email: ${option.to}`
     );
+  } catch (error) {
+    return errReturned(res, error);
+  }
+};
+
+exports.userList = async (req, res) => {
+  try {
+    let perPage = 5;
+    let { pageNo } = req.query;
+    let data = (pageNo - 1) * 5;
+
+    let user = await User.find().skip(data).limit(perPage);
+    let count = await User.count();
+
+    if (user === undefined || user.length == 0)
+      return sendResponse(res, SUCCESS, "Record not found");
+
+    return sendResponse(res, SUCCESS, "user list", {
+      count,
+      data: user,
+    });
   } catch (error) {
     return errReturned(res, error);
   }
