@@ -13,3 +13,6 @@ and run the following commond
 npm run start 
             OR
 npm run dev
+
+after registration first you have to create atleat one category after that you can create car records
+otherwise you are not able to create car records
