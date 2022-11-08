@@ -25,7 +25,7 @@ const MAX_AGE = 1000 * 60 * 60 * 3; // Three hours
 dbConnection()
   .then(() => log("Connected to Database", "green"))
   .catch((err) => {
-    console.log("error in connection", err);
+    // console.log("error in connection", err);
     log(`Data Base Connection Failed, ${err.message}`, "red");
   });
 
